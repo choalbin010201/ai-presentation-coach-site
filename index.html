@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 발표 코치</title>
+  <meta name="description" content="발표 대본을 입력하면 AI가 발표 구조와 개선점을 분석해주는 웹서비스" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="navbar" aria-label="주요 메뉴">
+      <a class="logo" href="#home">AI 발표 코치</a>
+      <button class="nav-toggle" type="button" aria-label="메뉴 열기">☰</button>
+      <ul class="nav-links">
+        <li><a href="#home">홈</a></li>
+        <li><a href="#service">서비스 소개</a></li>
+        <li><a href="#coach">AI 분석</a></li>
+        <li><a href="#guide">사용 방법</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="section hero-section">
+      <div class="hero-content">
+        <p class="eyebrow">Presentation Practice with AI</p>
+        <h1>발표 대본을 입력하면<br />AI가 발표 코칭을 해줍니다.</h1>
+        <p class="hero-desc">발표 주제와 대본을 입력하면 AI가 발표 구조, 전달력, 예상 질문, 발표 전 체크리스트를 분석해주는 웹 기반 AI 발표 코치입니다.</p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#coach">지금 분석하기</a>
+          <a class="secondary-button" href="#service">서비스 알아보기</a>
+        </div>
+      </div>
+      <div class="hero-card" aria-label="서비스 핵심 요약">
+        <div class="score-circle"><span>AI</span><strong>Coach</strong></div>
+        <ul><li>발표 구조 분석</li><li>발표 점수 피드백</li><li>예상 질문 생성</li><li>수정 대본 제안</li></ul>
+      </div>
+    </section>
+
+    <section id="service" class="section">
+      <div class="section-heading"><p class="eyebrow">Service</p><h2>이런 사람을 위한 서비스입니다</h2><p>발표를 준비하지만 대본의 흐름이 괜찮은지, 시간이 적절한지, 예상 질문은 무엇인지 혼자 판단하기 어려운 사용자를 돕습니다.</p></div>
+      <div class="feature-grid">
+        <article class="feature-card"><h3>대학생 발표 준비</h3><p>수업 발표, 팀 프로젝트 발표, 졸업 프로젝트 발표를 준비하는 학생에게 적합합니다.</p></article>
+        <article class="feature-card"><h3>발표 구조 점검</h3><p>도입, 본론, 결론이 자연스럽게 이어지는지 AI가 분석합니다.</p></article>
+        <article class="feature-card"><h3>예상 질문 대비</h3><p>발표 후 받을 수 있는 질문과 답변 예시를 미리 준비할 수 있습니다.</p></article>
+      </div>
+    </section>
+
+    <section id="coach" class="section coach-section">
+      <div class="section-heading"><p class="eyebrow">AI Analysis</p><h2>AI 발표 분석</h2><p>발표 주제와 대본을 입력하면 AI가 발표 피드백을 생성합니다.</p></div>
+      <div class="coach-layout">
+        <form id="coachForm" class="coach-form">
+          <label for="topic">발표 주제 <span class="required">*</span></label>
+          <input id="topic" name="topic" type="text" placeholder="예: AI를 활용한 발표 연습 서비스" autocomplete="off" />
+          <label for="presentationType">발표 유형</label>
+          <select id="presentationType" name="presentationType"><option value="대학 수업 발표">대학 수업 발표</option><option value="팀 프로젝트 발표">팀 프로젝트 발표</option><option value="졸업 프로젝트 발표">졸업 프로젝트 발표</option><option value="공모전 발표">공모전 발표</option><option value="기타 발표">기타 발표</option></select>
+          <label for="targetTime">목표 발표 시간</label>
+          <select id="targetTime" name="targetTime"><option value="3">3분</option><option value="5" selected>5분</option><option value="7">7분</option><option value="10">10분</option></select>
+          <label for="script">발표 대본 <span class="required">*</span></label>
+          <textarea id="script" name="script" rows="10" placeholder="분석받고 싶은 발표 대본을 입력하세요."></textarea>
+          <div class="textarea-info"><span id="charCount">0자</span><span>권장: 300자 이상</span></div>
+          <button id="analyzeButton" class="primary-button full-button" type="submit">AI 분석 시작</button>
+          <p id="formMessage" class="form-message" role="alert"></p>
+        </form>
+        <section class="result-panel" aria-live="polite">
+          <div id="loadingBox" class="loading-box hidden"><div class="loader"></div><p>AI가 발표 대본을 분석하고 있습니다. 잠시만 기다려주세요.</p></div>
+          <div id="emptyResult" class="empty-result"><h3>분석 결과가 여기에 표시됩니다</h3><p>발표 주제와 대본을 입력한 뒤 분석 버튼을 눌러보세요.</p></div>
+          <div id="resultBox" class="result-box hidden"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="guide" class="section">
+      <div class="section-heading"><p class="eyebrow">How to Use</p><h2>사용 방법</h2></div>
+      <ol class="step-list"><li><strong>발표 주제 입력</strong><p>발표의 핵심 주제를 한 문장으로 입력합니다.</p></li><li><strong>발표 대본 입력</strong><p>실제 발표할 내용을 그대로 붙여넣습니다.</p></li><li><strong>AI 분석 실행</strong><p>AI가 구조, 점수, 개선점, 예상 질문을 생성합니다.</p></li><li><strong>결과를 바탕으로 수정</strong><p>수정 대본과 체크리스트를 활용해 발표를 다시 연습합니다.</p></li></ol>
+    </section>
+
+    <section id="faq" class="section faq-section">
+      <div class="section-heading"><p class="eyebrow">FAQ</p><h2>자주 묻는 질문</h2></div>
+      <details><summary>AI 분석 결과는 항상 정확한가요?</summary><p>AI 분석은 발표 개선을 위한 참고 자료입니다. 최종 발표 내용은 사용자가 직접 판단하고 수정해야 합니다.</p></details>
+      <details><summary>API 키는 어디에 저장하나요?</summary><p>API 키는 코드에 직접 작성하지 않고 Vercel의 Environment Variables에 저장합니다.</p></details>
+      <details><summary>응답이 늦으면 어떻게 되나요?</summary><p>분석 중 안내 메시지가 표시되며, 응답 시간이 너무 길거나 API 오류가 발생하면 사용자에게 오류 메시지를 보여줍니다.</p></details>
+    </section>
+  </main>
+  <footer class="site-footer"><p>© 2026 AI 발표 코치. Built with HTML, CSS, JavaScript, Python Serverless Function.</p></footer>
+  <script src="./js/main.js"></script>
+</body>
+</html>
