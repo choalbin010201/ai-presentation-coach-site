@@ -1,57 +1,114 @@
-# AI 발표 코치
+# AI 발표 코치 웹 서비스
 
-발표 주제와 발표 대본을 입력하면 AI가 발표 구조, 전달력, 예상 질문, 수정 대본, 발표 전 체크리스트를 생성해주는 웹 기반 AI 발표 코칭 서비스입니다.
+## 1. 프로젝트 소개
 
-기존 Streamlit 기반 `ai-presentation-coach` 아이디어를 이번 미션 요구사항에 맞게 **순수 HTML/CSS/JavaScript 프론트엔드 + Vercel Python Serverless Function 백엔드** 구조로 재구성했습니다.
+AI 발표 코치는 사용자가 발표 주제와 발표 대본을 입력하면 AI가 발표 내용을 분석해주는 웹 서비스입니다.
 
----
+발표를 준비하는 대학생이나 발표자가 자신의 대본을 미리 점검할 수 있도록 발표 구조, 명확성, 개선점, 예상 질문, 발표 전 체크리스트 등을 제공합니다.
 
-## 1. 서비스 개요
-
-### 서비스명
-
-AI 발표 코치
-
-### 서비스 목적
-
-대학생이나 발표 준비자가 발표 대본의 구조와 전달력을 스스로 점검하기 어려운 문제를 해결하기 위해 만들었습니다.  
-사용자가 발표 주제와 대본을 입력하면 AI가 발표 구조, 전달력, 개선점, 예상 질문을 분석해 발표 준비를 도와줍니다.
-
-### 타겟 사용자
-
-- 대학 수업 발표를 준비하는 학생
-- 팀 프로젝트 발표를 준비하는 사용자
-- 졸업 프로젝트 또는 공모전 발표를 준비하는 사용자
-- 발표 대본의 흐름과 예상 질문을 미리 점검하고 싶은 사용자
+이 프로젝트는 Vanilla HTML, CSS, JavaScript로 프론트엔드를 구성하고, Vercel Python Serverless Function을 이용해 Gemini API와 연동하는 방식으로 구현했습니다.
 
 ---
 
 ## 2. 배포 URL
 
-Vercel 배포 후 아래 주소를 실제 배포 URL로 수정합니다.
+배포된 웹 서비스 주소는 다음과 같습니다.
 
 ```text
-https://your-vercel-project-url.vercel.app
+https://ai-presentation-coach-site.vercel.app
 ```
 
 ---
 
-## 3. 기술 스택
+## 3. 서비스 목적
 
-| 영역 | 기술 |
-|---|---|
-| 프론트엔드 | HTML, CSS, JavaScript |
-| 백엔드 | Vercel Serverless Functions - Python |
-| AI API | Gemini API |
-| 배포 | Vercel |
-| 버전 관리 | Git / GitHub |
+발표를 준비할 때 많은 사용자는 다음과 같은 어려움을 겪습니다.
+
+- 발표 대본의 구조가 자연스러운지 알기 어렵다.
+- 발표 시간이 목표 시간에 맞는지 확인하기 어렵다.
+- 발표 내용에서 어떤 점을 개선해야 하는지 스스로 판단하기 어렵다.
+- 발표 후 받을 수 있는 예상 질문을 미리 준비하기 어렵다.
+
+AI 발표 코치는 이러한 문제를 해결하기 위해 발표 대본을 입력받고, AI 분석 결과를 통해 발표 준비 과정을 도와주는 것을 목표로 합니다.
 
 ---
 
-## 4. 프로젝트 구조
+## 4. 대상 사용자
+
+이 서비스의 주요 대상 사용자는 다음과 같습니다.
+
+- 수업 발표를 준비하는 대학생
+- 프로젝트 발표를 준비하는 팀원
+- 면접 발표나 자기소개 발표를 준비하는 사용자
+- 발표 대본을 미리 점검하고 싶은 사용자
+
+---
+
+## 5. 주요 기능
+
+### 5.1 발표 대본 분석
+
+사용자는 발표 주제, 발표 유형, 목표 발표 시간, 발표 대본을 입력할 수 있습니다.
+
+입력된 내용은 백엔드 API로 전달되고, AI가 발표 내용을 분석합니다.
+
+### 5.2 예상 발표 시간 계산
+
+발표 대본의 글자 수를 기준으로 예상 발표 시간을 계산합니다.
+
+한국어 발표 기준으로 약 1분당 350자 정도를 기준으로 추정했습니다.
+
+### 5.3 AI 분석 결과 제공
+
+AI는 다음 항목을 분석해 제공합니다.
+
+- 발표 점수
+- 발표 구조 분석
+- 장점
+- 개선점
+- 수정 발표 대본
+- 예상 질문과 답변
+- 발표 전 체크리스트
+- 한 문장 핵심 조언
+
+### 5.4 오류 처리
+
+사용자가 입력값을 비워두거나 대본이 너무 짧은 경우 오류 메시지를 출력합니다.
+
+또한 AI API 호출에 실패하더라도 기본 분석 결과를 제공하는 fallback 로직을 추가했습니다.
+
+---
+
+## 6. 페이지 및 섹션 구성
+
+이 웹 서비스는 하나의 랜딩 페이지 안에 여러 섹션을 구성했습니다.
+
+| 섹션 | 설명 |
+|---|---|
+| Home | 서비스 이름과 핵심 소개 |
+| Service | 서비스 목적 및 제공 기능 소개 |
+| AI Coach | 발표 대본을 입력하고 AI 분석 결과를 받는 핵심 기능 |
+| How to Use | 사용 방법 안내 |
+| FAQ | 자주 묻는 질문 안내 |
+
+---
+
+## 7. 사용 기술
+
+| 구분 | 사용 기술 |
+|---|---|
+| Frontend | HTML, CSS, JavaScript |
+| Backend | Python, Vercel Serverless Function |
+| AI API | Gemini API |
+| Deployment | Vercel |
+| Version Control | Git, GitHub |
+
+---
+
+## 8. 프로젝트 구조
 
 ```text
-ai-presentation-coach/
+ai-presentation-coach-site/
 ├── index.html
 ├── css/
 │   └── style.css
@@ -63,231 +120,250 @@ ai-presentation-coach/
 │   ├── service_plan.md
 │   └── ai_coding_evidence.md
 ├── screenshots/
-│   └── README.md
+│   ├── 01_desktop_home.png
+│   ├── 02_mobile_home.png
+│   ├── 03_ai_input.png
+│   ├── 04_ai_result.png
+│   ├── 05_ai_error.png
+│   ├── 06_vercel_deploy.png
+│   ├── 07_github_repo.png
+│   └── 08_ai_coding_process.png
 ├── requirements.txt
+├── pyproject.toml
 ├── .env.example
 ├── .gitignore
-├── .python-version
 └── README.md
 ```
 
 ---
 
-## 5. 페이지 / 섹션 구성
+## 9. AI 기능 설명
 
-본 서비스는 하나의 웹페이지 안에 최소 3개 이상의 섹션을 제공합니다.
+### 9.1 입력값
 
-| 섹션 | 설명 |
+AI 분석 기능은 다음 입력값을 사용합니다.
+
+| 입력 항목 | 설명 |
 |---|---|
-| 홈 | 서비스 핵심 소개와 분석 시작 버튼 |
-| 서비스 소개 | 타겟 사용자와 서비스 가치 설명 |
-| AI 발표 분석 | 발표 주제와 대본 입력 후 AI 분석 결과 출력 |
-| 사용 방법 | 서비스 사용 절차 안내 |
-| FAQ | API 키, 응답 지연, 결과 신뢰도 등 안내 |
+| 발표 주제 | 사용자가 발표하려는 주제 |
+| 발표 유형 | 수업 발표, 프로젝트 발표, 면접 발표 등 |
+| 목표 발표 시간 | 사용자가 목표로 하는 발표 시간 |
+| 발표 대본 | 실제 발표에서 사용할 대본 |
 
-상단 메뉴를 통해 각 섹션으로 이동할 수 있습니다.
+### 9.2 출력값
 
----
+AI 분석 결과는 다음 항목으로 구성됩니다.
 
-## 6. 핵심 AI 기능
-
-### 입력
-
-- 발표 주제
-- 발표 유형
-- 목표 발표 시간
-- 발표 대본
-
-### 출력
-
-- 예상 발표 시간
-- 발표 점수
-- 도입/본론/결론 구조 분석
-- 장점
-- 개선점
-- 수정 발표 대본
-- 예상 질문과 답변
-- 발표 전 체크리스트
-- 핵심 조언 한 문장
-
----
-
-## 7. AI 기능 흐름
-
-```text
-사용자 입력
-→ JavaScript에서 fetch('/api/analyze') 요청
-→ api/analyze.py에서 Gemini API 호출
-→ 분석 결과 JSON 반환
-→ JavaScript가 결과를 화면에 렌더링
-```
-
-프론트엔드의 `js/main.js`는 사용자가 입력한 내용을 JSON으로 만들어 `/api/analyze`에 POST 요청을 보냅니다.
-
-```javascript
-fetch("/api/analyze", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify(payload)
-});
-```
-
----
-
-## 8. 실패 처리 기준
-
-| 상황 | 처리 방식 |
+| 출력 항목 | 설명 |
 |---|---|
-| 발표 주제 또는 대본이 비어 있음 | “발표 주제와 발표 대본을 모두 입력해주세요.” 메시지 출력 |
-| 발표 대본이 너무 짧음 | “발표 대본은 최소 50자 이상 입력해주세요.” 메시지 출력 |
-| API 응답 지연 | 일정 시간 후 “AI 응답이 지연되고 있습니다.” 메시지 출력 |
-| API 오류 | 기본 분석 결과 또는 오류 안내 메시지 출력 |
-| JSON 형식 오류 | 서버에서 잘못된 요청 형식 안내 |
-
-API 키가 없거나 AI API 호출에 실패하더라도 서비스가 완전히 중단되지 않도록 기본 분석 결과를 반환하는 fallback 로직을 포함했습니다.
-
----
-
-## 9. 환경 변수 설정
-
-API 키는 코드에 직접 작성하지 않고 환경 변수로 관리합니다.
-
-`.env.example` 파일 예시:
-
-```text
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-실제 키가 들어간 `.env` 파일은 GitHub에 올리지 않습니다.
-
-Vercel 프로젝트 설정에서는 다음 환경 변수를 추가합니다.
-
-| 이름 | 값 |
-|---|---|
-| `GEMINI_API_KEY` | 본인의 Gemini API 키 |
-| `GEMINI_MODEL` | `gemini-2.5-flash` |
+| 발표 점수 | 전체 점수, 구조, 명확성, 설득력, 전달력 점수 |
+| 예상 발표 시간 | 대본 글자 수를 기준으로 계산한 발표 시간 |
+| 발표 구조 분석 | 도입, 본론, 결론의 구성 분석 |
+| 장점 | 발표 대본의 긍정적인 부분 |
+| 개선점 | 보완하면 좋은 부분 |
+| 수정 발표 대본 | 더 자연스럽게 다듬은 발표 대본 |
+| 예상 질문과 답변 | 발표 후 받을 수 있는 질문과 답변 |
+| 발표 전 체크리스트 | 발표 전에 확인할 항목 |
+| 핵심 조언 | 발표 개선을 위한 한 문장 조언 |
 
 ---
 
-## 10. 로컬 실행 방법
+## 10. 실행 방법
 
-### 1) 저장소 복제
+### 10.1 저장소 clone
 
 ```bash
-git clone https://github.com/choalbin010201/ai-presentation-coach.git
+git clone https://github.com/choalbin010201/ai-presentation-coach-site.git
+cd ai-presentation-coach-site
 ```
 
-### 2) 프로젝트 폴더 이동
-
-```bash
-cd ai-presentation-coach
-```
-
-### 3) 패키지 설치
+### 10.2 의존성 설치
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4) Vercel CLI로 로컬 실행
+### 10.3 환경 변수 설정
 
-```bash
-vercel dev
+로컬 테스트를 할 경우 `.env` 파일을 생성하고 다음 값을 입력합니다.
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-브라우저에서 아래 주소로 접속합니다.
-
-```text
-http://localhost:3000
-```
+실제 API 키는 GitHub에 업로드하지 않습니다.
 
 ---
 
-## 11. 배포 방법
+## 11. Vercel 환경 변수 설정
 
-1. GitHub 저장소에 프로젝트 코드를 push합니다.
-2. Vercel에 로그인합니다.
-3. Vercel에서 GitHub 저장소를 Import합니다.
-4. Environment Variables에 `GEMINI_API_KEY`를 추가합니다.
+Vercel 배포 환경에서는 `.env` 파일을 올리지 않고, Vercel 프로젝트 설정에서 환경 변수를 등록합니다.
+
+Vercel 설정 경로는 다음과 같습니다.
+
+```text
+Project Settings → Environment Variables
+```
+
+등록한 환경 변수는 다음과 같습니다.
+
+| Name | Value |
+|---|---|
+| GEMINI_API_KEY | 실제 Gemini API 키 |
+| GEMINI_MODEL | gemini-2.5-flash |
+
+보안을 위해 실제 API 키는 코드나 README에 작성하지 않았습니다.
+
+---
+
+## 12. Vercel 배포 방법
+
+1. GitHub에 프로젝트 파일을 push합니다.
+2. Vercel에서 Add New Project를 선택합니다.
+3. GitHub 저장소 `ai-presentation-coach-site`를 Import합니다.
+4. Environment Variables에 `GEMINI_API_KEY`와 `GEMINI_MODEL`을 등록합니다.
 5. Deploy를 실행합니다.
-6. 배포된 URL에서 메뉴 이동, 반응형 화면, AI 분석 기능을 테스트합니다.
+6. 배포가 완료되면 제공된 Vercel URL로 접속해 정상 동작을 확인합니다.
 
 ---
 
-## 12. 반응형 확인
+## 13. 오류 처리 방식
 
-본 서비스는 CSS media query를 사용해 모바일 화면에서도 레이아웃이 깨지지 않도록 구현했습니다.
+이 프로젝트는 다음과 같은 오류 처리 기능을 포함합니다.
 
-확인할 화면 크기 예시:
+### 13.1 빈 입력값 처리
 
-- 데스크톱: 1440px 또는 1280px
-- 모바일: 390px 또는 430px
-
----
-
-## 13. 제출용 스크린샷
-
-`screenshots/` 폴더에 다음 스크린샷을 저장합니다.
+발표 주제나 발표 대본이 비어 있는 경우 다음과 같은 메시지를 출력합니다.
 
 ```text
-screenshots/
-├── desktop_home.png
-├── mobile_home.png
-├── ai_input.png
-├── ai_result.png
-├── ai_error.png
-└── ai_coding_process.png
+발표 주제와 발표 대본을 모두 입력해주세요.
 ```
 
-README에 첨부할 예시는 다음과 같습니다.
+### 13.2 짧은 대본 처리
 
-![데스크톱 홈 화면](./screenshots/desktop_home.png)
-![모바일 화면](./screenshots/mobile_home.png)
-![AI 입력 화면](./screenshots/ai_input.png)
-![AI 분석 결과](./screenshots/ai_result.png)
-![AI 코딩 도구 사용 과정](./screenshots/ai_coding_process.png)
+발표 대본이 50자 미만인 경우 다음과 같은 메시지를 출력합니다.
 
----
+```text
+대본이 너무 짧습니다. 최소 50자 이상 입력해주세요.
+```
 
-## 14. 서비스 기획서
+### 13.3 API 오류 처리
 
-서비스 기획서는 `docs/service_plan.md`에 정리했습니다.
+Gemini API 호출이 실패하거나 환경 변수 설정에 문제가 있는 경우에도 기본 분석 결과를 제공하도록 fallback 로직을 구현했습니다.
 
-포함 내용:
-
-- 서비스 목적
-- 타겟 사용자
-- 페이지 구성
-- 핵심 기능
-- AI 입력/출력
-- 실패 처리 기준
-- 테스트 케이스
+이를 통해 사용자는 API 오류가 발생해도 빈 화면이 아니라 기본 분석 결과를 확인할 수 있습니다.
 
 ---
 
-## 15. AI 코딩 도구 사용 증빙
+## 14. 스크린샷
 
-AI 코딩 도구 사용 과정은 `docs/ai_coding_evidence.md`에 정리했습니다.  
-실제 제출 시에는 대화 로그 또는 스크린샷을 추가합니다.
+### 14.1 데스크탑 메인 화면
+
+![Desktop Home](./screenshots/01_desktop_home.png)
+
+### 14.2 모바일 반응형 화면
+
+![Mobile Home](./screenshots/02_mobile_home.png)
+
+### 14.3 AI 입력 화면
+
+![AI Input](./screenshots/03_ai_input.png)
+
+### 14.4 AI 분석 결과 화면
+
+![AI Result](./screenshots/04_ai_result.png)
+
+### 14.5 오류 처리 화면
+
+![AI Error](./screenshots/05_ai_error.png)
+
+### 14.6 Vercel 배포 성공 화면
+
+![Vercel Deploy](./screenshots/06_vercel_deploy.png)
+
+### 14.7 GitHub 저장소 화면
+
+![GitHub Repository](./screenshots/07_github_repo.png)
+
+### 14.8 AI 코딩 도구 사용 증빙
+
+![AI Coding Process](./screenshots/08_ai_coding_process.png)
 
 ---
 
-## 16. 보안 주의사항
+## 15. AI 코딩 도구 활용
 
-- API 키는 절대 코드에 직접 작성하지 않습니다.
-- API 키가 포함된 `.env` 파일은 GitHub에 올리지 않습니다.
-- 키 유출이 의심되면 즉시 폐기하고 새 키를 발급합니다.
-- 스크린샷에도 API 키가 보이지 않도록 주의합니다.
+이 프로젝트를 진행하면서 ChatGPT를 활용해 다음 작업을 수행했습니다.
+
+- 웹 서비스 주제 구체화
+- 프론트엔드 페이지 구조 설계
+- HTML, CSS, JavaScript 코드 작성 보조
+- Python Serverless Function 코드 작성 보조
+- Gemini API 연동 구조 설계
+- Vercel 배포 오류 해결
+- Python entrypoint 설정 문제 해결
+- 루트 주소에서 API JSON만 출력되는 문제 해결
+- README 및 제출 자료 정리
+
+자세한 AI 활용 기록은 아래 문서에 정리했습니다.
+
+```text
+docs/ai_coding_evidence.md
+```
 
 ---
 
-## 17. 향후 개선 방향
+## 16. 서비스 기획 문서
 
-- 음성 파일 업로드 분석 기능 추가
-- 발표 녹음 기반 발음/속도 분석
-- 사용자별 분석 기록 저장
-- 다크 모드 지원
-- 방문자 분석 도구 연동
+서비스의 목적, 대상 사용자, 페이지 구조, 핵심 기능, AI 입출력 구조는 아래 문서에 정리했습니다.
+
+```text
+docs/service_plan.md
+```
+
+---
+
+## 17. 보안 관련 주의사항
+
+실제 API 키는 GitHub에 업로드하지 않았습니다.
+
+`.gitignore`에는 다음 항목을 포함해 민감한 파일이 저장소에 올라가지 않도록 했습니다.
+
+```gitignore
+.env
+.env.local
+.vercel/
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+```
+
+API 키는 Vercel의 Environment Variables에만 등록했습니다.
+
+---
+
+## 18. 테스트 결과
+
+다음 항목을 기준으로 기능을 테스트했습니다.
+
+| 테스트 항목 | 결과 |
+|---|---|
+| 배포 URL 접속 | 정상 |
+| 데스크탑 화면 표시 | 정상 |
+| 모바일 반응형 화면 | 정상 |
+| 발표 주제 입력 | 정상 |
+| 발표 대본 입력 | 정상 |
+| AI 분석 결과 출력 | 정상 |
+| 빈 입력값 오류 처리 | 정상 |
+| 짧은 대본 오류 처리 | 정상 |
+| API 오류 fallback 처리 | 정상 |
+
+---
+
+## 19. 프로젝트 요약
+
+AI 발표 코치는 발표 대본을 입력하면 AI가 발표 내용을 분석하고 개선 방향을 제안하는 웹 서비스입니다.
+
+이 프로젝트를 통해 정적 웹 페이지, JavaScript 기반 API 호출, Python Serverless Function, AI API 연동, Vercel 배포, 환경 변수 관리까지 포함한 AI 웹 서비스 개발 과정을 구현했습니다.
