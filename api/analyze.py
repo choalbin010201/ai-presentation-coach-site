@@ -2,191 +2,223 @@ import json
 import os
 import re
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse
 
-from google import genai
-
-
-def estimate_time(script):
-    char_count = len(script.replace(" ", "").replace("\n", ""))
-    minutes = char_count / 350 if char_count else 0
-    return char_count, minutes, int(minutes), int((minutes - int(minutes)) * 60)
+try:
+    from google import genai
+except Exception:
+    genai = None
 
 
-def extract_json(text):
-    text = text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?", "", text).strip()
-        text = re.sub(r"```$", "", text).strip()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        start = text.find("{")
-        end = text.rfind("}")
-        if start != -1 and end != -1 and start < end:
-            return json.loads(text[start:end + 1])
-        raise
+def estimate_presentation_time(script):
+    """
+    한국어 발표 기준 대략 1분에 330~380자 정도로 계산.
+    여기서는 평균 350자/분 기준으로 추정한다.
+    """
+    text = script.strip()
+    char_count = len(text)
 
+    if char_count == 0:
+        return {
+            "minutes": 0,
+            "seconds": 0,
+            "text": "0분 0초",
+            "char_count": 0
+        }
 
-def safe_score(value):
-    try:
-        score = int(float(value))
-    except (TypeError, ValueError):
-        score = 0
-    return max(0, min(score, 100))
-
-
-def normalize_analysis(data):
-    score = data.get("score", {})
-    data["score"] = {
-        "total": safe_score(score.get("total", 0)),
-        "structure": safe_score(score.get("structure", 0)),
-        "clarity": safe_score(score.get("clarity", 0)),
-        "delivery": safe_score(score.get("delivery", 0)),
-        "qna_preparation": safe_score(score.get("qna_preparation", 0)),
-    }
-    data.setdefault("structure_analysis", {
-        "intro": "도입부 분석 정보가 없습니다.",
-        "body": "본론부 분석 정보가 없습니다.",
-        "conclusion": "결론부 분석 정보가 없습니다.",
-        "overall": "전체 구조 분석 정보가 없습니다.",
-    })
-    data.setdefault("strengths", [])
-    data.setdefault("improvements", [])
-    data.setdefault("revised_script", "")
-    data.setdefault("expected_questions", [])
-    data.setdefault("checklist", [])
-    data.setdefault("one_sentence_summary", "")
-    return data
-
-
-def fallback_analysis(topic, script, target_time):
-    _, minutes, _, _ = estimate_time(script)
-    if minutes < target_time * 0.7:
-        time_feedback = "목표 발표 시간에 비해 대본이 짧은 편입니다. 구체적인 사례나 설명을 추가하면 좋습니다."
-    elif minutes > target_time * 1.3:
-        time_feedback = "목표 발표 시간에 비해 대본이 긴 편입니다. 반복되는 문장이나 덜 중요한 내용을 줄이면 좋습니다."
-    else:
-        time_feedback = "목표 발표 시간과 비교했을 때 대본 길이는 적절한 편입니다."
+    total_minutes = char_count / 350
+    minutes = int(total_minutes)
+    seconds = int((total_minutes - minutes) * 60)
 
     return {
-        "structure_analysis": {
-            "intro": "도입부에서는 발표 주제와 발표 목적을 더 명확하게 제시하는 것이 좋습니다.",
-            "body": "본론부에서는 핵심 내용을 순서대로 나누어 설명하는 구성이 필요합니다.",
-            "conclusion": "결론부에서는 발표 내용을 요약하고 핵심 메시지를 다시 강조하면 좋습니다.",
-            "overall": f"기본 분석 모드입니다. {time_feedback}",
-        },
-        "score": {
-            "total": 75,
-            "structure": 70,
-            "clarity": 75,
-            "delivery": 75,
-            "qna_preparation": 80,
-        },
-        "strengths": [
-            "발표 주제와 대본을 입력하여 발표 준비 과정을 체계화했습니다.",
-            "발표 내용을 글로 정리했기 때문에 말하기 연습의 기반이 마련되었습니다.",
-            "예상 질문을 준비할 수 있는 형태로 발표 내용을 구성할 수 있습니다.",
-        ],
-        "improvements": [
-            "도입부에서 발표 주제와 발표 목적을 더 명확하게 말하면 좋습니다.",
-            "'먼저', '다음으로', '마지막으로' 같은 연결 표현을 사용하면 발표 흐름이 좋아집니다.",
-            "마무리에서 핵심 내용을 한 문장으로 정리하고 청중에게 전달할 메시지를 강조하면 좋습니다.",
-        ],
-        "revised_script": f"""안녕하세요. 저는 오늘 {topic}에 대해 발표하겠습니다.
-먼저 이 주제를 선택한 이유와 배경을 간단히 설명하겠습니다. 이 주제는 현재 우리 생활과 밀접하게 관련되어 있으며, 앞으로도 중요성이 커질 가능성이 있습니다.
-
-다음으로 핵심 내용을 중심으로 발표를 진행하겠습니다. 발표 내용은 이해하기 쉽도록 주요 개념, 구체적인 예시, 그리고 활용 가능성 순서로 설명하겠습니다.
-
-마지막으로 발표 내용을 정리하면, {topic}은 단순한 개념을 넘어 실제 문제 해결에 활용될 수 있는 중요한 주제입니다. 이상으로 발표를 마치겠습니다. 감사합니다.""",
-        "expected_questions": [
-            {
-                "question": "이 주제를 선택한 가장 큰 이유는 무엇인가요?",
-                "answer": "발표 준비 과정에서 실제로 겪는 문제를 해결할 수 있는 주제이기 때문입니다.",
-            },
-            {
-                "question": "이 발표의 핵심 메시지는 무엇인가요?",
-                "answer": "발표 내용을 구조화하고 반복적으로 점검하면 전달력을 높일 수 있다는 점입니다.",
-            },
-            {
-                "question": "기존 발표 연습 방식과 비교했을 때 장점은 무엇인가요?",
-                "answer": "혼자서도 반복적으로 피드백을 받을 수 있고 예상 질문까지 준비할 수 있다는 점입니다.",
-            },
-        ],
-        "checklist": [
-            "발표 주제가 첫 부분에 명확하게 제시되었는지 확인하기",
-            "도입-본론-결론 구조가 드러나는지 확인하기",
-            "예시나 사례가 포함되어 있는지 확인하기",
-            "발표 시간이 목표 시간과 비슷한지 확인하기",
-            "예상 질문에 대한 답변을 미리 준비하기",
-        ],
-        "one_sentence_summary": "발표는 내용을 잘 아는 것뿐만 아니라 청중이 이해하기 쉽게 구조화해서 전달하는 것이 중요합니다.",
+        "minutes": minutes,
+        "seconds": seconds,
+        "text": f"{minutes}분 {seconds}초",
+        "char_count": char_count
     }
+
+
+def fallback_analysis(topic, script, presentation_type, target_time):
+    """
+    Gemini API 호출 실패 시 기본 분석 결과를 반환한다.
+    과제 제출 시 API 오류 대응 로직으로 설명 가능하다.
+    """
+    estimated = estimate_presentation_time(script)
+
+    return {
+        "used_fallback": True,
+        "estimated_time_text": estimated["text"],
+        "estimated_time": estimated,
+        "analysis": {
+            "score": {
+                "total": 72,
+                "structure": 70,
+                "clarity": 75,
+                "persuasiveness": 70,
+                "delivery": 73
+            },
+            "structure_analysis": {
+                "intro": "발표 주제가 제시되어 있으나, 청중의 관심을 끌 수 있는 문제 제기가 더 명확하면 좋습니다.",
+                "body": "핵심 내용은 포함되어 있지만, 근거와 예시를 구분하면 전달력이 높아집니다.",
+                "conclusion": "마무리 부분에서 핵심 메시지를 한 번 더 요약하면 발표 완성도가 올라갑니다.",
+                "overall": "전체적으로 발표 흐름은 있으나 도입-본론-결론의 구분을 더 분명히 하면 좋습니다."
+            },
+            "strengths": [
+                "발표 주제가 명확하게 설정되어 있습니다.",
+                "핵심 내용을 직접적으로 전달하려는 방향이 좋습니다.",
+                "대본 기반 발표 연습에 적합한 형태입니다."
+            ],
+            "improvements": [
+                "도입부에 청중의 관심을 끌 수 있는 질문이나 상황 제시를 추가하세요.",
+                "본론에서는 핵심 주장마다 구체적인 예시를 붙이면 좋습니다.",
+                "결론에서는 발표 내용을 요약하고 마지막 메시지를 강조하세요."
+            ],
+            "revised_script": (
+                f"안녕하세요. 오늘 발표할 주제는 '{topic}'입니다. "
+                "이 주제는 우리가 실제 상황에서 자주 마주할 수 있는 문제와 연결되어 있습니다. "
+                "먼저 현재 상황과 문제점을 살펴보고, 그다음 해결 방향과 기대 효과를 설명드리겠습니다. "
+                "마지막으로 발표 내용을 정리하면서 이 주제가 왜 중요한지 다시 한 번 말씀드리겠습니다."
+            ),
+            "expected_questions": [
+                {
+                    "question": "이 발표 주제를 선택한 이유는 무엇인가요?",
+                    "answer": "실제 문제 상황과 연결되어 있고, 청중이 쉽게 공감할 수 있는 주제라고 판단했기 때문입니다."
+                },
+                {
+                    "question": "가장 중요한 핵심 메시지는 무엇인가요?",
+                    "answer": "단순한 정보 전달이 아니라 문제를 이해하고 개선 방향을 제안하는 것입니다."
+                },
+                {
+                    "question": "발표 시간을 맞추기 위해 어떤 부분을 조정할 수 있나요?",
+                    "answer": "예시 설명을 줄이거나 결론 요약 부분을 압축하면 목표 시간에 맞출 수 있습니다."
+                }
+            ],
+            "checklist": [
+                "도입부에서 발표 목적을 분명히 말했는가?",
+                "본론에서 핵심 내용을 2~3개로 나누었는가?",
+                "각 주장에 예시나 근거가 있는가?",
+                "결론에서 핵심 메시지를 다시 강조했는가?",
+                "목표 발표 시간에 맞게 대본 길이를 조절했는가?"
+            ],
+            "one_sentence_summary": "발표 구조를 더 명확히 나누고 결론에서 핵심 메시지를 강조하면 완성도가 높아집니다."
+        }
+    }
+
+
+def extract_json_from_text(text):
+    """
+    Gemini 응답에서 JSON 부분만 추출한다.
+    모델이 ```json ... ``` 형태로 반환하는 경우도 처리한다.
+    """
+    if not text:
+        raise ValueError("Empty AI response")
+
+    cleaned = text.strip()
+
+    cleaned = re.sub(r"^```json", "", cleaned)
+    cleaned = re.sub(r"^```", "", cleaned)
+    cleaned = re.sub(r"```$", "", cleaned)
+    cleaned = cleaned.strip()
+
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"\{[\s\S]*\}", cleaned)
+    if match:
+        return json.loads(match.group(0))
+
+    raise ValueError("No JSON object found in AI response")
 
 
 def analyze_with_gemini(topic, script, presentation_type, target_time):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
+    api_key = os.environ.get("GEMINI_API_KEY")
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is missing.")
+
+    if genai is None:
+        raise ValueError("google-genai package is not installed.")
+
+    estimated = estimate_presentation_time(script)
+
     client = genai.Client(api_key=api_key)
 
     prompt = f"""
-너는 대학생 발표를 도와주는 전문 AI 발표 코치이다.
-사용자의 발표 대본을 분석하고 발표자가 실제로 개선할 수 있는 구체적인 피드백을 제공해라.
+너는 발표 코칭 전문가야.
+사용자의 발표 대본을 분석하고, 반드시 JSON 형식으로만 응답해.
 
-반드시 아래 JSON 형식으로만 답변해라.
-마크다운 코드블록은 쓰지 마라.
-설명 문장 없이 JSON만 출력해라.
+[발표 정보]
+- 발표 주제: {topic}
+- 발표 유형: {presentation_type}
+- 목표 발표 시간: {target_time}분
+- 예상 발표 시간: {estimated["text"]}
+- 대본 글자 수: {estimated["char_count"]}자
 
-발표 유형: {presentation_type}
-발표 주제: {topic}
-목표 발표 시간: {target_time}분
-
-발표 대본:
+[발표 대본]
 {script}
 
-분석 기준:
-1. 도입-본론-결론 구조가 명확한지 평가
-2. 발표 주제가 잘 드러나는지 평가
-3. 대학 수업 발표에 적절한 표현인지 평가
-4. 말로 발표했을 때 자연스러운지 평가
-5. 발표 점수를 100점 만점으로 계산
-6. 예상 질문 3~5개와 답변 예시 생성
-7. 전체 대본을 더 자연스러운 발표체로 수정
-8. 발표 전 확인할 체크리스트 생성
+아래 JSON 구조를 반드시 지켜서 응답해.
+설명 문장이나 마크다운 없이 JSON만 반환해.
 
-JSON 형식:
 {{
-  "structure_analysis": {{
-    "intro": "도입부 분석",
-    "body": "본론부 분석",
-    "conclusion": "결론부 분석",
-    "overall": "전체 구조 평가"
-  }},
   "score": {{
-    "total": 85,
-    "structure": 80,
-    "clarity": 85,
-    "delivery": 80,
-    "qna_preparation": 90
+    "total": 0,
+    "structure": 0,
+    "clarity": 0,
+    "persuasiveness": 0,
+    "delivery": 0
   }},
-  "strengths": ["장점 1", "장점 2", "장점 3"],
-  "improvements": ["개선점 1", "개선점 2", "개선점 3"],
-  "revised_script": "수정된 발표 대본",
-  "expected_questions": [{{"question": "예상 질문 1", "answer": "답변 예시 1"}}],
-  "checklist": ["체크리스트 1", "체크리스트 2"],
-  "one_sentence_summary": "핵심 조언"
+  "structure_analysis": {{
+    "intro": "",
+    "body": "",
+    "conclusion": "",
+    "overall": ""
+  }},
+  "strengths": ["", "", ""],
+  "improvements": ["", "", ""],
+  "revised_script": "",
+  "expected_questions": [
+    {{
+      "question": "",
+      "answer": ""
+    }},
+    {{
+      "question": "",
+      "answer": ""
+    }},
+    {{
+      "question": "",
+      "answer": ""
+    }}
+  ],
+  "checklist": ["", "", "", "", ""],
+  "one_sentence_summary": ""
 }}
-""".strip()
+"""
 
-    response = client.models.generate_content(model=model_name, contents=prompt)
-    return normalize_analysis(extract_json(response.text))
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt
+    )
+
+    response_text = response.text
+    analysis = extract_json_from_text(response_text)
+
+    return {
+        "used_fallback": False,
+        "estimated_time_text": estimated["text"],
+        "estimated_time": estimated,
+        "analysis": analysis
+    }
 
 
 class handler(BaseHTTPRequestHandler):
-    def _send_json(self, status_code, data):
+    def _send_json(self, data, status_code=200):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -195,53 +227,135 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _send_text(self, text, status_code=200):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(text.encode("utf-8"))
+
+    def _serve_file(self, file_path, content_type):
+        if not os.path.exists(file_path):
+            self._send_text("Not Found", 404)
+            return
+
+        with open(file_path, "rb") as file:
+            content = file.read()
+
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.end_headers()
+        self.wfile.write(content)
+
     def do_OPTIONS(self):
-        self._send_json(200, {"ok": True})
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
     def do_GET(self):
-        self._send_json(200, {
-            "service": "AI 발표 코치 API",
-            "status": "ok",
-            "message": "POST 요청으로 발표 주제와 대본을 보내면 분석 결과를 반환합니다.",
-        })
+        """
+        현재 Vercel이 루트 요청까지 Python handler로 보내고 있어서,
+        GET 요청에서 직접 index.html, css, js를 서빙하도록 처리한다.
+        """
+        try:
+            parsed_url = urlparse(self.path)
+            path = parsed_url.path
+
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            if path == "/" or path == "/index.html":
+                file_path = os.path.join(base_dir, "index.html")
+                self._serve_file(file_path, "text/html; charset=utf-8")
+                return
+
+            if path == "/css/style.css":
+                file_path = os.path.join(base_dir, "css", "style.css")
+                self._serve_file(file_path, "text/css; charset=utf-8")
+                return
+
+            if path == "/js/main.js":
+                file_path = os.path.join(base_dir, "js", "main.js")
+                self._serve_file(file_path, "application/javascript; charset=utf-8")
+                return
+
+            if path == "/api/analyze":
+                self._send_json({
+                    "service": "AI 발표 코치 API",
+                    "status": "ok",
+                    "message": "POST 요청으로 발표 주제와 대본을 보내면 분석 결과를 반환합니다."
+                })
+                return
+
+            self._send_text("Not Found", 404)
+
+        except Exception as error:
+            self._send_text(f"Server error: {str(error)}", 500)
 
     def do_POST(self):
         try:
-            raw = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode("utf-8")
-            payload = json.loads(raw or "{}")
-            topic = str(payload.get("topic", "")).strip()
-            script = str(payload.get("script", "")).strip()
-            presentation_type = str(payload.get("presentation_type", "대학 수업 발표")).strip()
-            target_time = int(payload.get("target_time", 5))
+            parsed_url = urlparse(self.path)
+            path = parsed_url.path
 
-            if not topic or not script:
-                return self._send_json(400, {"error": "발표 주제와 발표 대본을 모두 입력해주세요."})
-            if len(script) < 50:
-                return self._send_json(400, {"error": "발표 대본은 최소 50자 이상 입력해주세요."})
+            if path != "/api/analyze" and path != "/":
+                self._send_json({
+                    "error": "지원하지 않는 API 경로입니다."
+                }, 404)
+                return
 
-            char_count, minutes, minute_part, second_part = estimate_time(script)
-            used_fallback = False
-            api_error = None
+            content_length = int(self.headers.get("Content-Length", 0))
+            raw_body = self.rfile.read(content_length).decode("utf-8")
 
             try:
-                analysis = analyze_with_gemini(topic, script, presentation_type, target_time)
-            except Exception as error:
-                used_fallback = True
-                api_error = str(error)
-                analysis = fallback_analysis(topic, script, target_time)
+                body = json.loads(raw_body)
+            except json.JSONDecodeError:
+                self._send_json({
+                    "error": "요청 본문이 올바른 JSON 형식이 아닙니다."
+                }, 400)
+                return
 
-            self._send_json(200, {
-                "topic": topic,
-                "presentation_type": presentation_type,
-                "target_time": target_time,
-                "char_count": char_count,
-                "estimated_minutes": round(minutes, 2),
-                "estimated_time_text": f"{minute_part}분 {second_part}초",
-                "analysis": analysis,
-                "used_fallback": used_fallback,
-                "api_error": api_error,
-            })
-        except json.JSONDecodeError:
-            self._send_json(400, {"error": "요청 JSON 형식이 올바르지 않습니다."})
+            topic = str(body.get("topic", "")).strip()
+            script = str(body.get("script", "")).strip()
+            presentation_type = str(body.get("presentation_type", "일반 발표")).strip()
+            target_time = body.get("target_time", 3)
+
+            if not topic:
+                self._send_json({
+                    "error": "발표 주제를 입력해주세요."
+                }, 400)
+                return
+
+            if not script:
+                self._send_json({
+                    "error": "발표 대본을 입력해주세요."
+                }, 400)
+                return
+
+            if len(script) < 50:
+                self._send_json({
+                    "error": "대본이 너무 짧습니다. 최소 50자 이상 입력해주세요."
+                }, 400)
+                return
+
+            try:
+                result = analyze_with_gemini(
+                    topic=topic,
+                    script=script,
+                    presentation_type=presentation_type,
+                    target_time=target_time
+                )
+            except Exception as api_error:
+                result = fallback_analysis(
+                    topic=topic,
+                    script=script,
+                    presentation_type=presentation_type,
+                    target_time=target_time
+                )
+                result["api_error"] = str(api_error)
+
+            self._send_json(result)
+
         except Exception as error:
-            self._send_json(500, {"error": "서버 처리 중 오류가 발생했습니다.", "detail": str(error)})
+            self._send_json({
+                "error": f"서버 오류가 발생했습니다: {str(error)}"
+            }, 500)
